@@ -9,7 +9,26 @@ import '../styles/auth.scss';
 // Components
 import { Button } from '../components/Button';
 
+// Libaries
+import { useHistory } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+
 export function Home() {
+    /* Qualquer function começada com "use..." se refere à um Hook, portanto utiliza informações do contexto em questão */
+    const history = useHistory();
+
+    /* Captura de um valor de Context com o propósito de conferir se existe uma session em aberto */
+    const { user, signInWithGoogle } = useAuth();
+
+    /* Redirecionamento de página simulando um link */
+    async function handleCreateRoom(){
+        
+        if(!user){ await signInWithGoogle() }
+
+        // Redirecionamento após conclusão do login (PopUp)
+        history.push('/rooms/new');
+    }
+
     return (
         <div id="page-auth">
             <aside>
@@ -20,7 +39,7 @@ export function Home() {
             <main>
                 <div className="main-container">
                     <img src={logoImg} alt="LetmeAsk" />
-                    <button className="create-room">
+                    <button onClick={handleCreateRoom} className="create-room">
                         <img src={googleImage} alt="Logo do Google" />
                         Crie sua Sala com Google
                     </button>
