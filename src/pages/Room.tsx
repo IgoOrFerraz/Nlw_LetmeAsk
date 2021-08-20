@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 
 // Libraries
 import { useParams } from 'react-router-dom';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 // Styles
 import '../styles/room.scss';
@@ -18,12 +18,58 @@ type RoomParams = {
     id: string;
 }
 
+type FirebaseQuestions = Record<string, {
+    author: {
+        name: string;
+        avatar: string;
+    }
+    content: string;
+    isAnswered: boolean;
+    isHighlighted: boolean;
+}>
+
+type Question = {
+    id: string;
+    author: {
+        name: string;
+        avatar: string;
+    }
+    content: string;
+    isAnswered: boolean;
+    isHighlighted: boolean;
+}
+
 export function Room(){
     // useParams captura os parametros da URL após a /
     const params = useParams<RoomParams>(); // <RoomParams> é chamado de Generic, uma tipagem default
     const [newQuestion, setNewQuestion] = useState(''); 
     const roomId = params.id;
     const { user } = useAuth();
+    const [ questions, setQuestions] = useState<Question[]>([]);
+    const [ title, setTitle] = useState('');
+
+    useEffect(() => {
+        const roomRef = database.ref(`rooms/${roomId}`);
+
+        // .once() e .val() são functions vindo da biblioteca do Firebase
+        roomRef.on('value', room => {
+            const databaseRoom = room.val();
+            const firebaseQuestions: FirebaseQuestions = databaseRoom.questions ?? {};
+
+            const parsedQuestions = Object.entries(firebaseQuestions).map(([key, value]) => {
+                return {
+                    id: key,
+                    content: value.content,
+                    author: value.author,
+                    isAnswered: value.isAnswered,
+                    isHighlighted: value.isHighlighted
+                }
+            });            
+            
+            setTitle(databaseRoom.title);
+            setQuestions(parsedQuestions);
+        })
+    }, [roomId])
 
     async function handleSendQuestion(event: FormEvent){
         event.preventDefault();
@@ -56,8 +102,8 @@ export function Room(){
 
             <main className="content">
                 <div className="room-title">
-                    <h1>Sala React</h1>
-                    <span>4 perguntas</span>
+                    <h1>Sala {title}</h1>
+                    { questions.length > 0 && <span>{questions.length} pergunta(s)</span> }
                 </div>
 
                 <form onSubmit={handleSendQuestion}>
